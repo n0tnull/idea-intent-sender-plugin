@@ -1,7 +1,7 @@
 <idea-plugin>
 	<id>com.weezlabs.intentSender</id>
 	<name>Android Intent Sender</name>
-	<version>0.8.0</version>
+	<version>0.8.1</version>
 	<vendor email="vfarafonov@weezlabs.com" url="https://weezlabs.com">Weezlabs</vendor>
 
 	<description><![CDATA[
@@ -11,6 +11,10 @@
 
 	<change-notes><![CDATA[
       <html>
+        <dl>
+            <dt>0.8.1</dt>
+            <dd>Fixed when adb helper connect with adb server<dd>
+        </dl>
         <dl>
             <dt>0.8.0</dt>
             <dd>Fixed compatibility with IntelliJ 2017.3 and Android Studio 3.1<dd>

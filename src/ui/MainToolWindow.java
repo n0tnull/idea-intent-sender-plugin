@@ -36,6 +36,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -422,40 +423,67 @@ public class MainToolWindow implements ToolWindowFactory {
 	/**
 	 * Checks if adb is connected and switches UI accordingly
 	 */
-	private void startAdbAndSwitchUI(String adbPath) {
-		final AdbHelper adbHelper = AdbHelper.getInstance();
-		if (adbHelper.initAdb(adbPath, devicesListener_)) {
-			if (!adbHelper.isConnected()) {
-				locateAdbButton.setVisible(false);
-				startingAdbLabel.setVisible(true);
-				startingAdbLabel.getParent().invalidate();
-				startingAdbLabel.getParent().validate();
-				startingAdbLabel.getParent().repaint();
-				new SwingWorker<Void, Void>() {
-
-					@Override
-					protected Void doInBackground() throws Exception {
-						adbHelper.restartAdb();
-						return null;
+	private void startAdbAndSwitchUI(final String adbPath) {
+		new SwingWorker<Void, Void>(){
+			@Override
+			protected Void doInBackground()
+			{
+				try
+				{
+					final Field sInitialized = AndroidDebugBridge.class.getDeclaredField("sInitialized");
+					sInitialized.setAccessible(true);
+					while(!sInitialized.getBoolean(null))
+					{
+						Thread.sleep(3000);
 					}
+					Thread.sleep(3000);
+				}
+				catch (IllegalAccessException | NoSuchFieldException | InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+				return null;
+			}
 
-					@Override
-					protected void done() {
-						startingAdbLabel.setVisible(false);
+			@Override
+			protected void done()
+			{
+				super.done();
+				final AdbHelper adbHelper = AdbHelper.getInstance();
+				if (adbHelper.initAdb(adbPath, devicesListener_)) {
+					if (!adbHelper.isConnected()) {
+						locateAdbButton.setVisible(false);
+						startingAdbLabel.setVisible(true);
 						startingAdbLabel.getParent().invalidate();
 						startingAdbLabel.getParent().validate();
 						startingAdbLabel.getParent().repaint();
+						new SwingWorker<Void, Void>() {
+
+							@Override
+							protected Void doInBackground() throws Exception {
+								adbHelper.restartAdb();
+								return null;
+							}
+
+							@Override
+							protected void done() {
+								startingAdbLabel.setVisible(false);
+								startingAdbLabel.getParent().invalidate();
+								startingAdbLabel.getParent().validate();
+								startingAdbLabel.getParent().repaint();
+								toggleLocateAdbVisibility(false);
+								updateConnectedDevices();
+							}
+						}.execute();
+					} else {
 						toggleLocateAdbVisibility(false);
 						updateConnectedDevices();
 					}
-				}.execute();
-			} else {
-				toggleLocateAdbVisibility(false);
-				updateConnectedDevices();
+				} else {
+					toggleLocateAdbVisibility(true);
+				}
 			}
-		} else {
-			toggleLocateAdbVisibility(true);
-		}
+		}.execute();
 	}
 
 	private void toggleLocateAdbVisibility(boolean isLocateButtonVisible) {
